@@ -1,9 +1,13 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:gmon/Admin_menu.dart';
 import 'package:gmon/Monitor_menu.dart';
 import 'package:gmon/auth_services.dart';
+import 'package:gmon/google_sign_in.dart';
 import 'package:gmon/recover_password.dart';
 import 'package:gmon/signup_page.dart';
+import 'firebase_options.dart';
+import 'package:provider/provider.dart';
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -17,7 +21,12 @@ class _HomePageState extends State<HomePage> {
   bool isLoading = false; //tiempo de carga
   bool isCPasswordHidden = true;
   final AuthServices _authServices = AuthServices();
+
   void login()async{
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     setState(() {
       isLoading = true;
     });
@@ -201,10 +210,58 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-            ],
+
+              const SizedBox(height: 15),
+              SizedBox(
+                width: 280,
+                height: 50,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.grey[200],
+                  ),
+                  onPressed: () async{
+                    final provider =
+                    Provider.of<GoogleSignInProvider>(context, listen: false);
+
+                    final role = await provider.googleLogin();
+
+                    print("ROLE GOOGLE: $role");
+
+                    if (!context.mounted) return;
+
+                    if (role == 'Admin') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => Admin_Menu()),
+                      );
+                    } else if (role == 'Monitor') {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(builder: (_) => Monitor_menu()),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text("No se encontró rol del usuario")),
+                      );
+                    }
+                  },
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Image.asset("assets/google.png", height: 20),
+                      SizedBox(width: 10),
+                      Text(
+                        "Iniciar sesión con Google",
+                        style: TextStyle(color: Colors.black),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
 
 class AuthServices {
   // Instancia con autenticacion de Firebase
@@ -29,10 +31,12 @@ class AuthServices {
           .collection("usuarios")
           .doc(userCredential.user!.uid)
           .set({
+            "uid":userCredential.user!.uid,
             "name":name.trim(),
             "lastname":lastname.trim(),
             "email":email.trim(),
             "role":role, // se determina si es administrador o usuario
+            "createdAt": FieldValue.serverTimestamp(),
       });
       return null; // Situación erronea
     }catch (e) {
@@ -50,6 +54,8 @@ class AuthServices {
       rethrow;
     }
   }
+
+
 
   // //Función para gestionar el inicio de usuarios
   Future <String?> login({
