@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "736572913019",
+    "project_id": "gmon-50109",
+    "storage_bucket": "gmon-50109.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:736572913019:android:031fbe0814559ea6bbb9de",
+        "android_client_info": {
+          "package_name": "com.example.gmon"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "736572913019-aclh2ckttg82ln6al3tt1l6o2nenqr4d.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.gmon",
+            "certificate_hash": "d70bc246fc64bdc757a7c5170f15f2e36d9fcaf1"
+          }
+        },
+        {
+          "client_id": "736572913019-pv0j7fbov2dq974q6r1lohogabl4g6fp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-NKnlgtakXlJcDKMNAUda1fhTGbLTZ_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "736572913019-pv0j7fbov2dq974q6r1lohogabl4g6fp.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "736572913019-93pa9rbariob47h3f9sjsvm2fe4036h9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.gmon"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
