@@ -43,6 +43,10 @@ dependencies:
   cloud_firestore: ^6.3.0
   internet_connection_checker_plus: ^2.9.1+2
   google_sign_in: ^6.2.1
+  mobile_scanner: ^5.2.3
+  intl: ^0.20.2
+  audioplayers: ^6.1.0
+
 
 dev_dependencies:
   flutter_test:
@@ -63,6 +67,7 @@ dev_dependencies:
 flutter:
   assets:
     - assets/
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

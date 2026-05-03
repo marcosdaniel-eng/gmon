@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gmon/home_page.dart';
+import 'package:gmon/scanner_register.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/cupertino.dart';
@@ -300,14 +301,14 @@ class _Monitor_menuState extends State<Monitor_menu> {
               child: Column(children: [
                 Row(
                   children: [
-                      Expanded(child: buildOptionCard(
+                      Expanded(child: buildOptionCard( context,
                           "Escanear",
                           "assets/ESCANEAR.png",
                           Colors.blue
                         ),
                       ),
                     SizedBox(width: 10,),
-                    Expanded(child: buildOptionCard(
+                    Expanded(child: buildOptionCard( context,
                         "Pendientes",
                         "assets/ALERT.png",
                         Colors.pink
@@ -318,14 +319,14 @@ class _Monitor_menuState extends State<Monitor_menu> {
                 SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: buildOptionCard(
+                    Expanded(child: buildOptionCard( context,
                         "Asistencia",
                         "assets/SUPPORT.png",
                         Colors.green
                      ),
                     ),
                     SizedBox(width: 10,),
-                    Expanded(child: buildOptionCard(
+                    Expanded(child: buildOptionCard( context,
                         "Historial",
                         "assets/REPORT.png",
                         Colors.purple,
@@ -344,11 +345,18 @@ class _Monitor_menuState extends State<Monitor_menu> {
 }
 
 // CARD BOTONES
-Widget buildOptionCard(
+Widget buildOptionCard(BuildContext context,
     String title, String image, Color color) {
   return GestureDetector(
       onTap: () {
-        print(title); // un if para el cambio de pantalla
+        if(title == 'Escanear'){
+          Navigator.pushReplacement(
+            context,
+              MaterialPageRoute(
+                  builder: (_)=> const ScannerRegister(),
+              )
+          );// un if para el cambio de pantalla
+        }
       },
     child: Container(
     height: 140,
