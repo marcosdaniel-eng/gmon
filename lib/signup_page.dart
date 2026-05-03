@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:gmon/Admin_menu.dart';
+import 'package:gmon/Monitor_menu.dart';
 import 'package:gmon/auth_services.dart';
-
+import 'package:provider/provider.dart';
+import 'google_sign_in.dart';
 import 'home_page.dart';
 class SignupPage extends StatefulWidget {
   const SignupPage({super.key});
@@ -18,6 +21,7 @@ class _SignupPage extends State<SignupPage> {
   bool isLoading = false; //tiempo de carga
   bool isPasswordHidden = true;
   bool isCPasswordHidden = true;
+  bool passwordsMatch = true;
 
   // Instancia por AuthServices con autenticacion de Firebase
   final AuthServices _authServices = AuthServices();
@@ -92,6 +96,52 @@ class _SignupPage extends State<SignupPage> {
 
                       child: Column(
                         children: [
+                          SizedBox(
+                            width: 280,
+                            height: 50,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey[200],
+                              ),
+                              onPressed: () async{
+                                final provider =
+                                Provider.of<GoogleSignInProvider>(context, listen: false);
+
+                                final role = await provider.googleLogin();
+
+                                print("ROLE GOOGLE: $role");
+
+                                if (!context.mounted) return;
+
+                                if (role == 'Admin') {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => Admin_Menu()),
+                                  );
+                                } else if (role == 'Monitor') {
+                                  Navigator.pushReplacement(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => Monitor_menu()),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text("No se encontró rol del usuario")),
+                                  );
+                                }
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Image.asset("assets/google.png", height: 20),
+                                  SizedBox(width: 10),
+                                  Text(
+                                    "Iniciar sesión con Google",
+                                    style: TextStyle(color: Colors.black),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                           SizedBox(height: 20),
                           //Caja de texto Nombres y Apellidos
                           Row(
@@ -201,27 +251,28 @@ class _SignupPage extends State<SignupPage> {
                           //Caja de texto contraseña
                           SizedBox(height: 15),
                           TextField(
-                            controller:confirmpasswordController,
+                            controller: confirmpasswordController,
+                            onChanged: (value) {
+                              setState(() {
+                                passwordsMatch = value == passwordController.text;
+                              });
+                            },
                             decoration: InputDecoration(
                               labelText: "Confirmar contraseña:",
+                              errorText: passwordsMatch ? null : "Las contraseñas no coinciden",
                               filled: true,
                               fillColor: Colors.grey[200],
                               suffixIcon: IconButton(
-                                  onPressed: (){
-                                    setState(() {
-                                      isCPasswordHidden = !isCPasswordHidden;
-                                    });
-                                  },
-                                  icon:Icon(isCPasswordHidden ?Icons.visibility_off:Icons.visibility,)),
+                                onPressed: () {
+                                  setState(() {
+                                    isCPasswordHidden = !isCPasswordHidden;
+                                  });
+                                },
+                                icon: Icon(isCPasswordHidden
+                                    ? Icons.visibility_off
+                                    : Icons.visibility),
+                              ),
                               border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide.none,
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                borderSide: BorderSide.none,
-                              ),
-                              focusedBorder: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(30),
                                 borderSide: BorderSide.none,
                               ),
@@ -240,7 +291,11 @@ class _SignupPage extends State<SignupPage> {
                               width: 250,
                               height: 50,
                               child: ElevatedButton(
-                                onPressed: _signup,
+                                onPressed: passwordsMatch &&
+                              passwordController.text.isNotEmpty &&
+                              confirmpasswordController.text.isNotEmpty
+                                  ? _signup
+                                  : null,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF0B3C66),
                                   padding: const EdgeInsets.symmetric(vertical: 16),
