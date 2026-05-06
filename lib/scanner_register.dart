@@ -79,6 +79,7 @@ class _ScannerRegisterState extends State<ScannerRegister> {
   @override
   void dispose() {
     _internetConectionStreamSubscription?.cancel();
+    player.dispose();
     super.dispose();
   }
 
@@ -199,35 +200,37 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                     ),
                     QrScannerWidget(
                       onDetect: (String codigo) async {
-                        if (_isProcessing)
-                          return; // Evita procesar múltiples códigos al mismo tiempo
+                        if (_isProcessing) return;
+
+                        setState(() {
+                          _isProcessing = true;
+                        }); // Evita procesar múltiples códigos al mismo tiempo
                         try {
                           // 1. Convertimos el String a un objeto Map
                           Map<String, dynamic> datos = jsonDecode(codigo);
 
                           DateTime now = DateTime.now();
-                          String fechaFormateada = DateFormat(
-                            'dd/MM/yyyy',
-                          ).format(now);
-                          String horaFormateada = DateFormat('hh:mm a').format(now);
-
                           //2. Actualizamos el estado con los datos reales del código QR
                           setState(() {
-                            _isProcessing =
-                            true; // Indica que se está procesando un código
-                            fechaActual = fechaFormateada;
-                            horaActual = horaFormateada;
+                            fechaActual =  DateFormat('dd/MM/yyyy',).format(now);
+                            horaActual =  DateFormat('hh:mm a').format(now);
                             nombreAlumno = datos['nombre'];
                             seccionAlumno = datos['seccion'];
                             grupoAlumno = datos['grupo'];
                             tutorAlumno = datos['tutor'];
                           });
                           await player.stop();
-                          await player.play(AssetSource('beep.mp3'));
-                          HapticFeedback.mediumImpact();
+                          await player.play(AssetSource("beep.mp3"));
+                          await HapticFeedback.mediumImpact();
+
+                          await Future.delayed(const Duration(milliseconds: 200));
                         } catch (e) {
-                          print('Debio vibrar por error en el QR');
-                          HapticFeedback.heavyImpact();
+                          print('Error QR: $e');
+                        }
+                        if (mounted){
+                          setState(() {
+                            _isProcessing = false;
+                          });
                         }
                       },
                     ),
