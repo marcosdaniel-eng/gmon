@@ -5,10 +5,12 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:gmon/without%20sending.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:gmon/qr_scanner_widget.dart';
 import 'package:intl/intl.dart';
 import 'home_page.dart';
+import 'local_scan_storage.dart';
 
 
 class ScannerRegister extends StatefulWidget {
@@ -65,7 +67,39 @@ class _ScannerRegisterState extends State<ScannerRegister> {
           verificarConexion();
         });
   }
+  Future<void> registrarPendiente() async {
+    if (nombreAlumno.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Primero escanea un QR"),
+        ),
+      );
+      return;
+    }
 
+    final registro = {
+      'nombre': nombreAlumno,
+      'seccion': seccionAlumno,
+      'grupo': grupoAlumno,
+      'tutor': tutorAlumno,
+      'fecha': fechaActual,
+      'hora': horaActual,
+      'sincronizado': false,
+    };
+
+    await LocalScanStorage.guardarRegistro(registro);
+
+    if (!mounted) return;
+
+    _clearFields();
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const WithoutSending(),
+      ),
+    );
+  }
   Future<void> verificarConexion() async {
     final tieneInternet =
     await InternetConnection().hasInternetAccess;
@@ -248,12 +282,33 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                       ],
                     ),
                     RowInfo(label: 'Tutor', value: '$tutorAlumno'),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        _clearFields();
-                      },
-                      label: Text('Registrar'),
-                      icon: Icon(Icons.send),
+                    //Boton de enviar
+                    SizedBox(
+                      width: 250,
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        onPressed: registrarPendiente,
+                        icon: const Icon(
+                          Icons.near_me_outlined,
+                          color: Colors.black,
+                          size: 30,
+                        ),
+                        label: const Text(
+                          'Registrar',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF2EEA73),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 0,
+                        ),
+                      ),
                     ),
                   ],
                 ),
