@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:gmon/home_page.dart';
 import 'package:gmon/scanner_register.dart';
+import 'package:gmon/without_sending.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/cupertino.dart';
@@ -48,31 +49,46 @@ class _Monitor_menuState extends State<Monitor_menu> {
       MaterialPageRoute(builder: (_) => HomePage()), // tu login
     );
   }
+  Future<void> verificarConexion() async {
+    bool tieneInternet = await InternetConnection().hasInternetAccess;
+
+    if (!mounted) return;
+
+    setState(() {
+      isConnectedToInternet = tieneInternet;
+    });
+  }
 
   @override
   void initState() {
     super.initState();
     initializeDateFormatting('es');
     obtenerUsuario();
-    _internetConectionStreamSubscription = InternetConnection().onStatusChange.listen((event){
-      switch (event){
-        case InternetStatus.connected:
-          setState(() {
-            isConnectedToInternet = true;
-          });
-          break;
-        case InternetStatus.disconnected:
-          setState(() {
-            isConnectedToInternet = false;
-          });
-          break;
-          default:
-           setState(() {
-             isConnectedToInternet = false;
-           });
-            break;
-      }
-    });
+
+    verificarConexion(); // <- revisa internet al cargar
+
+    _internetConectionStreamSubscription =
+        InternetConnection().onStatusChange.listen((event) {
+          switch (event) {
+            case InternetStatus.connected:
+              setState(() {
+                isConnectedToInternet = true;
+              });
+              break;
+
+            case InternetStatus.disconnected:
+              setState(() {
+                isConnectedToInternet = false;
+              });
+              break;
+
+            default:
+              setState(() {
+                isConnectedToInternet = false;
+              });
+              break;
+          }
+        });
   }
   @override
   void dispose() {
@@ -106,6 +122,54 @@ class _Monitor_menuState extends State<Monitor_menu> {
       };
     }
   }
+// Widget de card internet
+  Widget buildOptionCard(
+      BuildContext context,
+      String title,
+      String image,
+      Color color,
+      ) {
+    return GestureDetector(
+      onTap: () async {
+        if (title == 'Escanear') {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const ScannerRegister()),
+          );
+          await verificarConexion();
+        } else if (title == 'Pendientes') {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const WithoutSending()),
+          );
+          await verificarConexion();
+        }
+      },
+      child: Container(
+        height: 140,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: color, width: 2),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(image, height: 90),
+            const SizedBox(height: 5),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
 
 // Interfaz
   @override
@@ -343,44 +407,3 @@ class _Monitor_menuState extends State<Monitor_menu> {
     );
   }
 }
-
-// CARD BOTONES
-Widget buildOptionCard(BuildContext context,
-    String title, String image, Color color) {
-  return GestureDetector(
-      onTap: () {
-        if(title == 'Escanear'){
-          Navigator.pushReplacement(
-            context,
-              MaterialPageRoute(
-                  builder: (_)=> const ScannerRegister(),
-              )
-          );// un if para el cambio de pantalla
-        }
-      },
-    child: Container(
-    height: 140,
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(20),
-      border: Border.all(color: color, width: 2),
-    ),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Image.asset(image, height: 90),
-        SizedBox(height: 5),
-        Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    ),
-  );
-}
-
-

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:gmon/Monitor_menu.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
-
 import 'home_page.dart';
 import 'local_scan_storage.dart';
 
@@ -38,7 +38,7 @@ class _WithoutSendingState extends State<WithoutSending> {
     _internetConectionStreamSubscription =
         InternetConnection().onStatusChange.listen((event) async {
           verificarConexion();
-        });
+       });
   }
 
   // Funcion de Registros locales
@@ -49,13 +49,12 @@ class _WithoutSendingState extends State<WithoutSending> {
       registros = data;
     });
   }
-
+ // Funcion de conectividad a red
   Future<void> verificarConexion() async {
     final tieneInternet =
     await InternetConnection().hasInternetAccess;
 
     if (!mounted) return;
-
     setState(() {
       isConnectedToInternet = tieneInternet;
     });
@@ -164,6 +163,42 @@ class _WithoutSendingState extends State<WithoutSending> {
                 ],
               ),
             ),
+
+            const SizedBox(height: 10,),
+            //Boton de regresar a pantalla anterior
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child:Row(
+                children: [
+                  GestureDetector(
+                    onTap: (){
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const Monitor_menu(),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Color(0xFF0B3D5C),
+                        size: 18,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
             // Lista de pendientes
             const SizedBox(height: 15),
 
@@ -189,39 +224,73 @@ class _WithoutSendingState extends State<WithoutSending> {
           itemBuilder: (context, index) {
             final item = registros[index];
 
-            return Card(
+            return Container(
               margin: const EdgeInsets.symmetric(
                 horizontal: 16,
                 vertical: 8,
               ),
-              child: ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                title: Text(
-                  item['nombre'] ?? 'Sin nombre',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                subtitle: Text(
-                  "Sección: ${item['seccion'] ?? ''}\n"
-                      "Grupo: ${item['grupo'] ?? ''}\n"
-                      "Tutor: ${item['tutor'] ?? ''}\n"
-                      "Fecha: ${item['fecha'] ?? ''}  Hora: ${item['hora'] ?? ''}",
-                ),
-                trailing: const Icon(
-                  Icons.cloud_upload_outlined,
-                  color: Colors.orange,
-                     ),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(14)
                     ),
-                  );
-                },
+              child: Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 23,
+                    backgroundColor: Color(0xFFFF5C75),
+                    child: Icon(Icons.priority_high,color: Colors.white,size: 32,
+                    ),
+                  ),
+                  const SizedBox(width: 12,),
+                  Expanded(child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          item['nombre'] ?? '',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text("Sección: ${item['seccion']??''}"),
+                        Text("Grupo: ${item['grupo']??''}"),
+                        Row(
+                          children: [
+                            Text("Fecha: ${item['fecha']??''}"),
+                            const SizedBox(width: 20),
+                            Text("Hora: ${item['hora']??''}"),
+                          ],
+                        ),
+                      ],
+                    )
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF9AA8),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Text(
+                      "Pendiente",
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+              );
+              },
               ),
             ),
           ],
         ),
-
       ),
     );
   }

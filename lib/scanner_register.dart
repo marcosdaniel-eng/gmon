@@ -5,7 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:gmon/without%20sending.dart';
+import 'package:gmon/Monitor_menu.dart';
+import 'package:gmon/without_sending.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:gmon/qr_scanner_widget.dart';
 import 'package:intl/intl.dart';
@@ -216,6 +217,43 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                 ],
               ),
             ),
+
+            const SizedBox(height: 10,),
+            //Boton de regresar a pantalla anterior
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 28),
+              child:Row(
+                children: [
+                  GestureDetector(
+                    onTap: (){
+                      if (Navigator.canPop(context)) {
+                        Navigator.pop(context);
+                      } else {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const Monitor_menu(),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Color(0xFF0B3D5C),
+                        size: 18,
+                      ),
+                    ),
+                  )
+                ],
+              ),
+            ),
+
             //QR Escaneo
             Center(
               child: Padding(
