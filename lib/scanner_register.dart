@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ui';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:gmon/register_manually.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
@@ -23,6 +25,7 @@ class ScannerRegister extends StatefulWidget {
 
 class _ScannerRegisterState extends State<ScannerRegister> {
   bool isConnectedToInternet = true;
+  bool mostrarAvisoManual = true;
   StreamSubscription? _internetConectionStreamSubscription;
   String nombreAlumno = '';
   String seccionAlumno = '';
@@ -62,7 +65,6 @@ class _ScannerRegisterState extends State<ScannerRegister> {
   void initState() {
     super.initState();
     verificarConexion();
-
     _internetConectionStreamSubscription =
         InternetConnection().onStatusChange.listen((event) async {
           verificarConexion();
@@ -122,6 +124,7 @@ class _ScannerRegisterState extends State<ScannerRegister> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
+        child: SingleChildScrollView(
         child: Column(
           children: [
 
@@ -152,67 +155,72 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                   ),
 
                   // DERECHA
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border: Border.all(
+                  Flexible(
+                    child:Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isConnectedToInternet
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isConnectedToInternet
+                                ? Icons.wifi
+                                : Icons.wifi_off,
                             color: isConnectedToInternet
                                 ? Colors.green
                                 : Colors.red,
+                            size: 18,
                           ),
-                          shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          isConnectedToInternet
-                              ? Icons.wifi
-                              : Icons.wifi_off,
-                          color: isConnectedToInternet
-                              ? Colors.green
-                              : Colors.red,
-                          size: 18,
-                        ),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        isConnectedToInternet ? "En línea" : "Sin red",
-                        style: TextStyle(
-                          color: isConnectedToInternet
-                              ? Colors.green
-                              : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      //Cierre de sesion
-                      GestureDetector(
-                        onTap: () async {
-                          bool? confirmar = await showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text("Cerrar sesión"),
-                              content: Text("¿Seguro que deseas salir?"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: Text("Cancelar"),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text("Salir"),
-                                ),
-                              ],
+                        SizedBox(width: 5),
+                        Flexible(
+                          child:Text(
+                            isConnectedToInternet ? "En línea" : "Sin red",
+                            style: TextStyle(
+                              color: isConnectedToInternet
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        //Cierre de sesion
+                        GestureDetector(
+                          onTap: () async {
+                            bool? confirmar = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Cerrar sesión"),
+                                content: Text("¿Seguro que deseas salir?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: Text("Cancelar"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: Text("Salir"),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                          if (confirmar == true) {
-                            cerrarSesion();
-                          }
-                        },
-                        child: Icon(Icons.logout, color: Colors.red, size: 32),
-                      ),
-                    ],
+                            if (confirmar == true) {
+                              cerrarSesion();
+                            }
+                          },
+                          child: Icon(Icons.logout, color: Colors.red, size: 32),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -345,14 +353,125 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                             borderRadius: BorderRadius.circular(10),
                           ),
                           elevation: 0,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+
+                    if(mostrarAvisoManual) ...[
+                      const SizedBox(height: 12),
+
+                      Container(
+                        width: 320,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF9EF),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: const Color(0xFF8BD9A5),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const CircleAvatar(
+                              radius: 19,
+                              backgroundColor: Color(0xFF2EEA73),
+                              child: Icon(
+                                Icons.info_outline,
+                                color: Colors.white,
+                                size: 23,
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Registro manual',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    SizedBox(height: 2),
+                                    Text('Usalo cuando el alumno no traiga su credencial para hacer la búsqueda manual.',
+                                    style: TextStyle(fontSize: 12,
+                                    color: Colors.black87,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton(
+                                onPressed:(){
+                                  setState(() {
+                                    mostrarAvisoManual = false;
+                                  });
+                                },
+                              icon: const Icon(
+                                Icons.close,
+                                color: Colors.black87,
+                                size: 22,
+                              ),
+                              tooltip: 'Cerrar aviso',
+                            )
+                          ],
+                        ),
+                      )
+                    ],
+
+                    const SizedBox(height: 12,),
+                    // Botón registrar manual
+                    SizedBox(
+                        width: 250,
+                        height: 52,
+                        child: OutlinedButton.icon(
+                            onPressed:() {
+                              Navigator.push(context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ManualRegister(),
+                                  ),
+                                );
+                            },
+                            icon: const Icon(
+                              Icons.person_search_outlined,
+                              color: Color(0xFF20B85A),
+                              size: 28,
+                            ),
+                            label: const Text(
+                              'Registro manual',
+                              style: TextStyle(
+                                color: Color(0xFF20B85A),
+                                fontSize: 17,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              side: const BorderSide(
+                                color: Color(0xFF20B85A),
+                                width: 2,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
+                              )
+                            ),
+                          ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -13,6 +13,11 @@ class LocalScanStorage {
     await prefs.setStringList(key, lista);
   }
 
+  static Future<void> limpiarRegistros() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(key);
+  }
+
   static Future<List<Map<String, dynamic>>> obtenerRegistros() async {
     final prefs = await SharedPreferences.getInstance();
 

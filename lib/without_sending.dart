@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gmon/Monitor_menu.dart';
@@ -18,6 +19,7 @@ class _WithoutSendingState extends State<WithoutSending> {
   List<Map<String, dynamic>> registros = [];
   bool isConnectedToInternet = true;
   StreamSubscription? _internetConectionStreamSubscription;
+  bool isSending = false;
 
   //Funcion de cierre de sesion
   Future<void> cerrarSesion() async {
@@ -59,6 +61,64 @@ class _WithoutSendingState extends State<WithoutSending> {
       isConnectedToInternet = tieneInternet;
     });
   }
+
+  Future<void> enviarRegistros() async {
+    if (!isConnectedToInternet || registros.isEmpty || isSending) return;
+
+    setState(() {
+      isSending = true;
+    });
+
+    try {
+      final batch = FirebaseFirestore.instance.batch();
+
+      for (final registro in registros) {
+        final docRef = FirebaseFirestore.instance
+            .collection("registros_retardos")
+            .doc();
+
+        batch.set(docRef, {
+          ...registro,
+          'sincronizado': true,
+          'fechaEnvio': FieldValue.serverTimestamp(),
+        });
+        final historialRef = FirebaseFirestore.instance
+          .collection("historial_asistencia")
+          .doc();
+
+        batch.set(historialRef,{
+          ...registro,
+          'fechaEnvio':FieldValue.serverTimestamp(),
+        });
+      }
+
+      await batch.commit();
+      await LocalScanStorage.limpiarRegistros();
+      await cargarRegistros();
+
+      if (!mounted) return;
+
+      setState(() {
+        registros.clear();
+        isSending = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Registros enviados correctamente")),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        isSending = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error al enviar: $e")),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _internetConectionStreamSubscription?.cancel();
@@ -98,67 +158,72 @@ class _WithoutSendingState extends State<WithoutSending> {
                   ),
 
                   // DERECHA
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border: Border.all(
+                  Flexible(
+                    child:Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isConnectedToInternet
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isConnectedToInternet
+                                ? Icons.wifi
+                                : Icons.wifi_off,
                             color: isConnectedToInternet
                                 ? Colors.green
                                 : Colors.red,
+                            size: 18,
                           ),
-                          shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          isConnectedToInternet
-                              ? Icons.wifi
-                              : Icons.wifi_off,
-                          color: isConnectedToInternet
-                              ? Colors.green
-                              : Colors.red,
-                          size: 18,
-                        ),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        isConnectedToInternet ? "En línea" : "Sin red",
-                        style: TextStyle(
-                          color: isConnectedToInternet
-                              ? Colors.green
-                              : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      //Cierre de sesion
-                      GestureDetector(
-                        onTap: () async {
-                          bool? confirmar = await showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text("Cerrar sesión"),
-                              content: Text("¿Seguro que deseas salir?"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: Text("Cancelar"),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text("Salir"),
-                                ),
-                              ],
+                        SizedBox(width: 5),
+                        Flexible(
+                          child:Text(
+                            isConnectedToInternet ? "En línea" : "Sin red",
+                            style: TextStyle(
+                              color: isConnectedToInternet
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        //Cierre de sesion
+                        GestureDetector(
+                          onTap: () async {
+                            bool? confirmar = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Cerrar sesión"),
+                                content: Text("¿Seguro que deseas salir?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: Text("Cancelar"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: Text("Salir"),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                          if (confirmar == true) {
-                            cerrarSesion();
-                          }
-                        },
-                        child: Icon(Icons.logout, color: Colors.red, size: 32),
-                      ),
-                    ],
+                            if (confirmar == true) {
+                              cerrarSesion();
+                            }
+                          },
+                          child: Icon(Icons.logout, color: Colors.red, size: 32),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -255,7 +320,9 @@ class _WithoutSendingState extends State<WithoutSending> {
                         ),
                         Text("Sección: ${item['seccion']??''}"),
                         Text("Grupo: ${item['grupo']??''}"),
-                        Row(
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
                             Text("Fecha: ${item['fecha']??''}"),
                             const SizedBox(width: 20),
@@ -289,6 +356,50 @@ class _WithoutSendingState extends State<WithoutSending> {
               },
               ),
             ),
+            const SizedBox(height: 20),
+
+            Center(
+              child: SizedBox(
+                width: 220,
+                height: 55,
+                child: ElevatedButton.icon(
+                  onPressed: isConnectedToInternet &&
+                      registros.isNotEmpty &&
+                      !isSending
+                      ? enviarRegistros
+                      : null,
+                  icon: isSending
+                      ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.black,
+                    ),
+                  )
+                      : const Icon(
+                    Icons.near_me_outlined,
+                    color: Colors.black,
+                  ),
+                  label: Text(
+                    isSending ? "Enviando..." : "Enviar",
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18,
+                    ),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2EEA73),
+                    disabledBackgroundColor: Colors.grey[300],
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(15),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
           ],
         ),
       ),

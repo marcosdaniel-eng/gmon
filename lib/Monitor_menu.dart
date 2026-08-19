@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:gmon/history_sent.dart';
 import 'package:gmon/home_page.dart';
 import 'package:gmon/scanner_register.dart';
 import 'package:gmon/without_sending.dart';
@@ -143,6 +144,11 @@ class _Monitor_menuState extends State<Monitor_menu> {
             MaterialPageRoute(builder: (_) => const WithoutSending()),
           );
           await verificarConexion();
+        }else if (title == 'Historial') {
+          await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const HistorySent()),
+          );
         }
       },
       child: Container(
@@ -182,6 +188,7 @@ class _Monitor_menuState extends State<Monitor_menu> {
     }
     return Scaffold(
       body: SafeArea(
+        child: SingleChildScrollView(
         child: Column(
           children: [
 
@@ -212,67 +219,72 @@ class _Monitor_menuState extends State<Monitor_menu> {
                   ),
 
                   // DERECHA
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          border: Border.all(
+                  Flexible(
+                    child:Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: isConnectedToInternet
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            isConnectedToInternet
+                                ? Icons.wifi
+                                : Icons.wifi_off,
                             color: isConnectedToInternet
                                 ? Colors.green
                                 : Colors.red,
+                            size: 18,
                           ),
-                          shape: BoxShape.circle,
                         ),
-                        child: Icon(
-                          isConnectedToInternet
-                              ? Icons.wifi
-                              : Icons.wifi_off,
-                          color: isConnectedToInternet
-                              ? Colors.green
-                              : Colors.red,
-                          size: 18,
-                        ),
-                      ),
-                      SizedBox(width: 5),
-                      Text(
-                        isConnectedToInternet ? "En línea" : "Sin red",
-                        style: TextStyle(
-                          color: isConnectedToInternet
-                              ? Colors.green
-                              : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(width: 10),
-                      //Cierre de sesion
-                      GestureDetector(
-                        onTap: () async {
-                          bool? confirmar = await showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text("Cerrar sesión"),
-                              content: Text("¿Seguro que deseas salir?"),
-                              actions: [
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, false),
-                                  child: Text("Cancelar"),
-                                ),
-                                TextButton(
-                                  onPressed: () => Navigator.pop(context, true),
-                                  child: Text("Salir"),
-                                ),
-                              ],
+                        SizedBox(width: 5),
+                        Flexible(
+                          child:Text(
+                            isConnectedToInternet ? "En línea" : "Sin red",
+                            style: TextStyle(
+                              color: isConnectedToInternet
+                                  ? Colors.green
+                                  : Colors.red,
+                              fontWeight: FontWeight.bold,
                             ),
-                          );
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        //Cierre de sesion
+                        GestureDetector(
+                          onTap: () async {
+                            bool? confirmar = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Cerrar sesión"),
+                                content: Text("¿Seguro que deseas salir?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, false),
+                                    child: Text("Cancelar"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context, true),
+                                    child: Text("Salir"),
+                                  ),
+                                ],
+                              ),
+                            );
 
-                          if (confirmar == true) {
-                            cerrarSesion();
-                          }
-                        },
-                        child: Icon(Icons.logout, color: Colors.red, size: 32),
-                      ),
-                    ],
+                            if (confirmar == true) {
+                              cerrarSesion();
+                            }
+                          },
+                          child: Icon(Icons.logout, color: Colors.red, size: 32),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -394,14 +406,15 @@ class _Monitor_menuState extends State<Monitor_menu> {
                         "Historial",
                         "assets/REPORT.png",
                         Colors.purple,
-                      ),
-                     ),
-                    ],
-                  ),
-                ],
-              ),
-            )
-          ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              )
+            ],
+          ),
         ),
       ),
     );
