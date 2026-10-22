@@ -263,6 +263,7 @@ class _ScannerRegisterState extends State<ScannerRegister> {
             ),
 
             //QR Escaneo
+            //Fecha y hora
             Center(
               child: Padding(
                 padding: const EdgeInsets.all(10),
@@ -270,14 +271,109 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      crossAxisAlignment: .center,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        RowInfo(label: 'Fecha', value: '$fechaActual'),
-                        RowInfo(label: 'Horas', value: '$horaActual'),
-                      ],
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(15),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.08),
+                              blurRadius: 8,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+
+                            // FECHA
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.calendar_month_outlined,
+                                    color: Color(0xFF0B3D5C),
+                                    size: 30,
+                                  ),
+
+                                  const SizedBox(width: 10),
+
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Fecha:',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        fechaActual,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            // SEPARADOR
+                            Container(
+                              width: 1,
+                              height: 45,
+                              color: Colors.grey[300],
+                            ),
+
+                            const SizedBox(width: 15),
+
+                            // HORA
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.access_time,
+                                    color: Color(0xFF0B3D5C),
+                                    size: 30,
+                                  ),
+
+                                  const SizedBox(width: 10),
+
+                                  Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Hora:',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Text(
+                                        horaActual,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
+                    const SizedBox(height: 12),
+                    //Camara
                     QrScannerWidget(
                       onDetect: (String codigo) async {
                         if (_isProcessing) return;
@@ -314,20 +410,39 @@ class _ScannerRegisterState extends State<ScannerRegister> {
                         }
                       },
                     ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [RowInfo(label: 'Alumno', value: '$nombreAlumno')],
+                    const SizedBox(height: 10),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RowInfo(
+                            icon: Icons.person_outline,
+                            label: 'Alumno',
+                            value: nombreAlumno,
+                          ),
+
+                          RowInfo(
+                            icon: Icons.school_outlined,
+                            label: 'Sección',
+                            value: seccionAlumno,
+                          ),
+
+                          RowInfo(
+                            icon: Icons.groups_outlined,
+                            label: 'Grupo',
+                            value: grupoAlumno,
+                          ),
+
+                          RowInfo(
+                            icon: Icons.supervisor_account_outlined,
+                            label: 'Tutor',
+                            value: tutorAlumno,
+                          ),
+                        ],
+                      ),
                     ),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        RowInfo(label: 'Sección', value: '$seccionAlumno'),
-                        RowInfo(label: 'Grupo', value: '$grupoAlumno'),
-                      ],
-                    ),
-                    RowInfo(label: 'Tutor', value: '$tutorAlumno'),
                     //Boton de enviar
                     SizedBox(
                       width: 250,
@@ -479,24 +594,64 @@ class _ScannerRegisterState extends State<ScannerRegister> {
 }
 
 class RowInfo extends StatelessWidget {
+  final IconData icon;
   final String label;
   final String value;
 
-  const RowInfo({super.key, required this.label, required this.value});
+  const RowInfo({super.key, required this.icon, required this.label, required this.value});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$label: ',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+
+          // Iconos
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFF0B3D5C).withOpacity(0.10),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              icon,
+              color: const Color(0xFF0B3D5C),
+              size: 23,
+            ),
           ),
-          Text(value, style: const TextStyle(fontSize: 18)),
+
+          const SizedBox(width: 12),
+
+          // Información
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const SizedBox(height: 2),
+
+                Text(
+                  value,
+                  softWrap: true,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -40,18 +40,19 @@ class _WithoutSendingState extends State<WithoutSending> {
     _internetConectionStreamSubscription =
         InternetConnection().onStatusChange.listen((event) async {
           verificarConexion();
-       });
+        });
   }
 
   // Funcion de Registros locales
   Future<void> cargarRegistros() async {
     final data = await LocalScanStorage.obtenerRegistros();
 
+    if (!mounted) return;
     setState(() {
       registros = data;
     });
   }
- // Funcion de conectividad a red
+  // Funcion de conectividad a red
   Future<void> verificarConexion() async {
     final tieneInternet =
     await InternetConnection().hasInternetAccess;
@@ -63,60 +64,69 @@ class _WithoutSendingState extends State<WithoutSending> {
   }
 
   Future<void> enviarRegistros() async {
-    if (!isConnectedToInternet || registros.isEmpty || isSending) return;
-
-    setState(() {
-      isSending = true;
-    });
-
+    if (isSending || !isConnectedToInternet || registros.isEmpty) return;
+    setState(() => isSending = true);
+    int enviados = 0;
     try {
-      final batch = FirebaseFirestore.instance.batch();
-
-      for (final registro in registros) {
-        final docRef = FirebaseFirestore.instance
-            .collection("registros_retardos")
-            .doc();
-
-        batch.set(docRef, {
-          ...registro,
-          'sincronizado': true,
-          'fechaEnvio': FieldValue.serverTimestamp(),
-        });
-        final historialRef = FirebaseFirestore.instance
-          .collection("historial_asistencia")
-          .doc();
-
-        batch.set(historialRef,{
-          ...registro,
-          'fechaEnvio':FieldValue.serverTimestamp(),
-        });
+      // La acción solo se ejecuta al pulsar el botón Enviar.
+      // Cada registro usa el mismo ID al reintentar, evitando duplicados.
+      final lista = await LocalScanStorage.obtenerRegistros();
+      for (final registro in lista) {
+        if (!await InternetConnection().hasInternetAccess) break;
+        final id = (registro['id'] ?? '').toString().isNotEmpty
+            ? registro['id'].toString()
+            : 'legacy_${registro['matricula'] ?? registro['nombre'] ?? 'qr'}_${registro['fecha'] ?? ''}_${registro['hora'] ?? ''}'
+            .replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
+        final datos = Map<String, dynamic>.from(registro)
+          ..remove('id')
+          ..remove('fechaEnvio');
+        datos['sincronizado'] = true;
+        final firestore = FirebaseFirestore.instance;
+        try {
+          final historial = firestore.collection('historial_asistencia').doc(id);
+          final retardos = firestore.collection('registros_retardos').doc(id);
+          // Se mantienen las dos colecciones de tu implementación original.
+          // Si solo debe ir a una, ajustaremos esta sección después.
+          await historial.set({
+            ...datos,
+            'fechaEnvio': FieldValue.serverTimestamp(),
+          }).timeout(const Duration(seconds: 15));
+          await retardos.set({
+            ...datos,
+            'fechaEnvio': FieldValue.serverTimestamp(),
+          }).timeout(const Duration(seconds: 15));
+          // Confirmar que ambos documentos existen realmente en el servidor.
+          final a = await historial.get(const GetOptions(source: Source.server))
+              .timeout(const Duration(seconds: 15));
+          final b = await retardos.get(const GetOptions(source: Source.server))
+              .timeout(const Duration(seconds: 15));
+          if (!a.exists || !b.exists) break;
+          await LocalScanStorage.eliminarPorIds({registro['id']?.toString() ?? id});
+          enviados++;
+        } catch (_) {
+          // Mantener el pendiente para un próximo intento manual.
+          break;
+        }
       }
-
-      await batch.commit();
-      await LocalScanStorage.limpiarRegistros();
       await cargarRegistros();
-
       if (!mounted) return;
-
-      setState(() {
-        registros.clear();
-        isSending = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Registros enviados correctamente")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+        content: Text('Enviados: $enviados. Revisa los pendientes restantes.'),
+      ));
     } catch (e) {
       if (!mounted) return;
-
-      setState(() {
-        isSending = false;
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Error al enviar: $e")),
+        SnackBar(content: Text('No se completó el envío: $e')),
       );
+    } finally {
+      if (mounted) setState(() => isSending = false);
     }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    cargarRegistros();
   }
 
   @override
@@ -274,86 +284,86 @@ class _WithoutSendingState extends State<WithoutSending> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-      const SizedBox(height: 10),
+            const SizedBox(height: 10),
 
-      Expanded(
-        child: registros.isEmpty
-            ? const Center(
-          child: Text(
-            "No hay registros pendientes",
-            style: TextStyle(fontSize: 18),
-              ),
-            )
-            : ListView.builder(
-          itemCount: registros.length,
-          itemBuilder: (context, index) {
-            final item = registros[index];
+            Expanded(
+              child: registros.isEmpty
+                  ? const Center(
+                child: Text(
+                  "No hay registros pendientes",
+                  style: TextStyle(fontSize: 18),
+                ),
+              )
+                  : ListView.builder(
+                itemCount: registros.length,
+                itemBuilder: (context, index) {
+                  final item = registros[index];
 
-            return Container(
-              margin: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 8,
-              ),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(14)
+                  return Container(
+                    margin: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
                     ),
-              child: Row(
-                children: [
-                  const CircleAvatar(
-                    radius: 23,
-                    backgroundColor: Color(0xFFFF5C75),
-                    child: Icon(Icons.priority_high,color: Colors.white,size: 32,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(14)
                     ),
-                  ),
-                  const SizedBox(width: 12,),
-                  Expanded(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          item['nombre'] ?? '',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                        const CircleAvatar(
+                          radius: 23,
+                          backgroundColor: Color(0xFFFF5C75),
+                          child: Icon(Icons.priority_high,color: Colors.white,size: 32,
                           ),
                         ),
-                        Text("Sección: ${item['seccion']??''}"),
-                        Text("Grupo: ${item['grupo']??''}"),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 4,
+                        const SizedBox(width: 12,),
+                        Expanded(child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text("Fecha: ${item['fecha']??''}"),
-                            const SizedBox(width: 20),
-                            Text("Hora: ${item['hora']??''}"),
+                            Text(
+                              item['nombre'] ?? '',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            Text("Sección: ${item['seccion']??''}"),
+                            Text("Grupo: ${item['grupo']??''}"),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 4,
+                              children: [
+                                Text("Fecha: ${item['fecha']??''}"),
+                                const SizedBox(width: 20),
+                                Text("Hora: ${item['hora']??''}"),
+                              ],
+                            ),
                           ],
+                        )
                         ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFFF9AA8),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Text(
+                            "Pendiente",
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        )
                       ],
-                    )
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
                     ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFF9AA8),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      "Pendiente",
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  )
-                ],
-              ),
-              );
-              },
+                  );
+                },
               ),
             ),
             const SizedBox(height: 20),

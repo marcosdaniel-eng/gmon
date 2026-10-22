@@ -29,11 +29,12 @@ class _QrScannerWidgetState extends State<QrScannerWidget> {
     controller.dispose();
     super.dispose();
   }
-
+//Diseño de camara
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 300,
+      width: 310,
+      height: 190,
       child: MobileScanner(
         controller: controller,
         onDetect: (capture) {
